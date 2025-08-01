@@ -15,8 +15,9 @@
 
 ```bash
 npm install
+```
 
 ## Run
-
 ```bash
 npm index.js
+```
