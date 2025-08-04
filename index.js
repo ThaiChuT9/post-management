@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
 const logger = require('./middlewares/logger');
+const cors = require('cors');
 
 const app = express();
 app.use(express.json());
@@ -11,6 +12,7 @@ app.use(logger);
 app.use(morgan('dev'));
 app.use('/api', require('./routes/authRouter'));
 app.use('/api', require('./routes/postRouter'));
+app.use(cors());
 
 
 // Connect to MongoDB
