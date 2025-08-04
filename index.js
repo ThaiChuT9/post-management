@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(logger);
 
 app.use(morgan('dev'));
-app.use('/api/auth', require('./routes/authRouter'));
+app.use('/api', require('./routes/authRouter'));
 app.use('/api', require('./routes/postRouter'));
 
 
