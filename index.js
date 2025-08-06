@@ -6,21 +6,26 @@ const logger = require('./middlewares/logger');
 const cors = require('cors');
 
 const app = express();
-app.use(express.json());
-app.use(logger);
 
+app.use(logger);
 app.use(morgan('dev'));
+
+// Middleware for CORS
+const corsOptions = {
+    origin: 'http://localhost:5000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Credentials'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    maxAge: 86400 // 24 hours
+};
+
+// Áp dụng CORS cho tất cả routes
+app.use(cors(corsOptions));
+
+app.use(express.json());
 app.use('/api', require('./routes/authRouter'));
 app.use('/api', require('./routes/postRouter'));
-// Middleware for CORS
-app.use(cors({
-    origin: 'http://localhost:5000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-}));
-// app.use(cors()); // Enable CORS for all origins
-app.use(express.json());
 
 
 // Connect to MongoDB
