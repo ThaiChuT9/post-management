@@ -16,7 +16,7 @@ app.use(morgan('dev'));
 
 // Middleware for CORS
 const corsOptions = {
-    origin: 'http://localhost:5000',
+    origin: ['http://localhost:5000', 'https://posty-app-16lec-e2d2d.web.app/'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Credentials'],
