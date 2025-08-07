@@ -1,0 +1,218 @@
+openapi: 3.0.0
+info:
+  title: Post Management API
+  description: REST API for managing user accounts and blog posts
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Post:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        category:
+          type: string
+        thumbnail:
+          type: string
+        author:
+          type: object
+          properties:
+            _id:
+              type: string
+            username:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+  /register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        201:
+          description: Registered successfully
+        400:
+          description: Username already taken
+
+  /login:
+    post:
+      summary: Login user and get JWT
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: Logged in successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+
+  /posts:
+    get:
+      summary: Get all posts
+      tags: [Posts]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+      responses:
+        200:
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+
+    post:
+      summary: Create a new post
+      tags: [Posts]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                category:
+                  type: string
+                thumbnail:
+                  type: string
+                  format: binary
+      responses:
+        201:
+          description: Post created
+        400:
+          description: Invalid input
+
+  /posts/{id}:
+    get:
+      summary: Get post by ID
+      tags: [Posts]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Post detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        404:
+          description: Post not found
+
+    put:
+      summary: Update a post
+      tags: [Posts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                category:
+                  type: string
+                thumbnail:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Post updated
+        403:
+          description: Unauthorized
+        404:
+          description: Post not found
+
+    delete:
+      summary: Delete a post
+      tags: [Posts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Post deleted
+        403:
+          description: Unauthorized
+        404:
+          description: Post not found
