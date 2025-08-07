@@ -6,24 +6,24 @@ const emitter = require('../util/eventEmitter');
 // Create a new post
 exports.createPost = async (req, res) => {
     try {
-        const {title, content, category} = req.body;
-        const thumbnail = req.files ? req.files.map(file => `/uploads/${file.filename}`) : null;
-        const newPost = new Post({title, content, category, thumbnail, author: req.user.id});
+        const { title, content, category } = req.body;
+        const thumbnail = req.file ? `/uploads/${req.file.filename}` : null;
+        const newPost = new Post({ title, content, category, thumbnail, author: req.user.id });
         const savedPost = await newPost.save();
         emitter.emit('post:created', savedPost);
-        res.status(201).json({message: 'Post created successfully.', post: savedPost});
+        res.status(201).json({ message: 'Post created successfully.', post: savedPost });
     } catch (error) {
-        res.status(500).json({message: 'Error creating post.', error});
+        res.status(500).json({ message: 'Error creating post.', error });
     }
 };
 
 // Get all posts
 exports.getPosts = async (req, res) => {
     try {
-        const {page = 1, limit = 10, sortBy= 'createdAt', category} = req.query;
-        const filter = category ? {category} : {};
-        const posts = await Post.find(filter, null, {__v: 0})
-            .sort({[sortBy]: -1})
+        const { page = 1, limit = 10, sortBy = 'createdAt', category } = req.query;
+        const filter = category ? { category } : {};
+        const posts = await Post.find(filter, null, { __v: 0 })
+            .sort({ [sortBy]: -1 })
             .skip((page - 1) * limit)
             .limit(Number(limit))
             .populate('author', 'username -_id');
@@ -38,7 +38,7 @@ exports.getPosts = async (req, res) => {
         }));
         res.status(200).json(formattedPosts);
     } catch (error) {
-        res.status(500).json({message: 'Error fetching posts.', error});
+        res.status(500).json({ message: 'Error fetching posts.', error });
     }
 };
 
@@ -48,11 +48,11 @@ exports.getPostById = async (req, res) => {
         const postId = req.params.id;
         const postItem = await Post.findById(postId).populate('author', 'username');
         if (!postItem) {
-            return res.status(404).json({message: 'Post not found.'});
+            return res.status(404).json({ message: 'Post not found.' });
         }
         res.status(200).json(postItem);
     } catch (error) {
-        res.status(500).json({message: 'Error fetching post.', error});
+        res.status(500).json({ message: 'Error fetching post.', error });
     }
 };
 
@@ -60,35 +60,53 @@ exports.getPostById = async (req, res) => {
 exports.updatePost = async (req, res) => {
     try {
         const postId = req.params.id;
-        const postItem = await Post.findById(postId, null, {__v: 0});
+        const postItem = await Post.findById(postId);
         if (!postItem) {
-            return res.status(404).json({message: 'Post not found.'});
+            return res.status(404).json({ message: 'Post not found.' });
         }
+
+        // Kiểm tra quyền
         if (postItem.author.toString() !== req.user.id) {
-            return res.status(403).json({message: 'You are not authorized to update this post.'});
+            return res.status(403).json({ message: 'You are not authorized to update this post.' });
         }
-        const {title, content, category} = req.body;
-        postItem.title = title || postItem.title;
-        postItem.content = content || postItem.content;
-        postItem.category = category || postItem.category;
-        if (req.file?.filename && postItem.thumbnail) {
-            const oldFilePath = path.join(__dirname, '../uploads', postItem.thumbnail);
-            try {
-                await fs.unlink(oldFilePath);
-            } catch (err) {
-                console.error('Error deleting old thumbnail:', err);
+
+        const { title, content, category } = req.body;
+
+        // Cập nhật nội dung
+        if (title) postItem.title = title;
+        if (content) postItem.content = content;
+        if (category) postItem.category = category;
+
+        // Cập nhật thumbnail nếu có file mới
+        if (req.file?.filename) {
+            // Xóa ảnh cũ nếu tồn tại
+            if (postItem.thumbnail) {
+                const oldPath = path.join(__dirname, '../uploads', postItem.thumbnail);
+                try {
+                    await fs.unlink(oldPath);
+                } catch (err) {
+                    console.warn('⚠️ Không thể xóa thumbnail cũ:', err.message);
+                }
             }
+            postItem.thumbnail = `/uploads/${req.file.filename}`;
         }
-        const updatedPost = await Post.findByIdAndUpdate(
-            postId,
-            {new: true}
-        ).populate('author', 'username -_id');
-        // Emit an event after updating the post
+
+        // Lưu bài viết đã chỉnh sửa
+        const updatedPost = await postItem.save();
+
+        // Populate tác giả để phản hồi đúng
+        await updatedPost.populate('author', 'username -_id');
+
+        // Emit event
         emitter.emit('post:updated', updatedPost);
-        res.status(200).json({message: 'Post updated successfully.', post: updatedPost});
+
+        res.status(200).json({
+            message: 'Post updated successfully.',
+            post: updatedPost,
+        });
     } catch (error) {
-        console.error('Error updating post:', error);
-        res.status(500).json({message: 'Error updating post.', error});
+        console.error('❌ Error updating post:', error);
+        res.status(500).json({ message: 'Error updating post.', error });
     }
 };
 
@@ -98,10 +116,10 @@ exports.deletePost = async (req, res) => {
         const postId = req.params.id;
         const postItem = await Post.findById(postId);
         if (!postItem) {
-            return res.status(404).json({message: 'Post not found.'});
+            return res.status(404).json({ message: 'Post not found.' });
         }
         if (postItem.author.toString() !== req.user.id) {
-            return res.status(403).json({message: 'You are not authorized to delete this post.'});
+            return res.status(403).json({ message: 'You are not authorized to delete this post.' });
         }
         if (postItem.thumbnail) {
             const filePath = path.join(__dirname, '../uploads', postItem.thumbnail);
@@ -114,9 +132,9 @@ exports.deletePost = async (req, res) => {
         await Post.findByIdAndDelete(postId);
         // Emit an event after deleting the post
         emitter.emit('post:deleted', postId);
-        res.status(200).json({message: 'Post deleted successfully.'});
+        res.status(200).json({ message: 'Post deleted successfully.' });
     } catch (error) {
         console.error('Error deleting post:', error);
-        res.status(500).json({message: 'Error deleting post.', error});
+        res.status(500).json({ message: 'Error deleting post.', error });
     }
 };
