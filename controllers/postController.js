@@ -7,7 +7,7 @@ const emitter = require('../util/eventEmitter');
 exports.createPost = async (req, res) => {
     try {
         const {title, content, category} = req.body;
-        const thumbnail = req.file ?.filename || null;
+        const thumbnail = req.files ? req.files.map(file => `/uploads/${file.filename}`) : null;
         const newPost = new Post({title, content, category, thumbnail, author: req.user.id});
         const savedPost = await newPost.save();
         emitter.emit('post:created', savedPost);

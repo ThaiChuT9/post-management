@@ -26,6 +26,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api', require('./routes/authRouter'));
 app.use('/api', require('./routes/postRouter'));
+app.use('/uploads', express.static('uploads'));
 
 
 // Connect to MongoDB
