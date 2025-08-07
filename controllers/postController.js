@@ -1,5 +1,5 @@
 const path = require('path');
-const Post = require('../models/post');
+const Post = require('../models/Post');
 const fs = require('fs').promises;
 const emitter = require('../util/eventEmitter');
 
