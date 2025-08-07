@@ -4,6 +4,10 @@ const mongoose = require('mongoose');
 const morgan = require('morgan');
 const logger = require('./middlewares/logger');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const yaml = require('yamljs');
+const swaggerDocument = yaml.load('./swagger.yaml');
+
 
 const app = express();
 
@@ -27,6 +31,7 @@ app.use(express.json());
 app.use('/api', require('./routes/authRouter'));
 app.use('/api', require('./routes/postRouter'));
 app.use('/uploads', express.static('uploads'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 
 // Connect to MongoDB
